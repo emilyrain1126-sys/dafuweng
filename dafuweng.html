@@ -478,16 +478,37 @@
             const badge = document.getElementById('sheet-status-badge');
             const container = document.getElementById('course-catalog');
             const apiUrl = getSavedSheetUrl();
+            const CACHE_KEY = 'chinese_monopoly_catalog_v1';
 
-            badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> 載入卷宗中...`;
-            container.innerHTML = '';
+            // 1. 先讀取平板本地快取，讓畫面 0 秒瞬間出現課程按鈕
+            let hasCache = false;
+            try {
+                const cachedRaw = localStorage.getItem(CACHE_KEY);
+                if (cachedRaw) {
+                    const cachedData = JSON.parse(cachedRaw);
+                    if (Array.isArray(cachedData) && cachedData.length > 0) {
+                        coursesCatalog = cachedData;
+                        hasCache = true;
+                        renderCourseCatalog();
+                        badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#f3ead3] text-[#6e4e16] border border-[#d5c7a9]";
+                        badge.innerHTML = `<i class="fa-solid fa-rotate fa-spin mr-1"></i> 背景同步最新狀態...`;
+                    }
+                }
+            } catch (e) {}
 
+            if (!hasCache) {
+                badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> 載入卷宗中...`;
+                container.innerHTML = '';
+            }
+
+            // 2. 向試算表取得最新密碼鎖定與分頁狀態
             try {
                 const res = await fetch(`${apiUrl}?action=list`);
                 const data = await res.json();
 
                 if (data.status === 'ok' && Array.isArray(data.courses)) {
                     coursesCatalog = data.courses;
+                    try { localStorage.setItem(CACHE_KEY, JSON.stringify(coursesCatalog)); } catch (e) {}
                     badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#eef3ee] text-[#2d4a32] border border-[#bfd1c1]";
                     badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> 共收錄 ${coursesCatalog.length} 卷`;
                     renderCourseCatalog();
@@ -496,16 +517,21 @@
                 }
             } catch (err) {
                 console.error("載入課程清單失敗:", err);
-                badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#f8ecea] text-[#8f2a20] border border-[#e2c2bd]";
-                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> 卷宗連線異常`;
-                container.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-center space-y-3">
-                        <div class="text-4xl text-[#a63429]"><i class="fa-solid fa-circle-exclamation"></i></div>
-                        <p class="font-serif-tc text-lg font-black text-[#2b2623]">無法取得試算表課程清單</p>
-                        <p class="text-xs text-[#786b5e] font-bold">請確認 Apps Script 部署權限已設為「所有人」，或點擊下方按鈕重試</p>
-                        <button onclick="initCatalog()" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-6 py-2 rounded-xl text-sm font-black">重新載入</button>
-                    </div>
-                `;
+                if (hasCache) {
+                    badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#eef3ee] text-[#2d4a32] border border-[#bfd1c1]";
+                    badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> 共收錄 ${coursesCatalog.length} 卷（已快取）`;
+                } else {
+                    badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#f8ecea] text-[#8f2a20] border border-[#e2c2bd]";
+                    badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> 卷宗連線異常`;
+                    container.innerHTML = `
+                        <div class="col-span-full flex flex-col items-center justify-center py-12 text-center space-y-3">
+                            <div class="text-4xl text-[#a63429]"><i class="fa-solid fa-circle-exclamation"></i></div>
+                            <p class="font-serif-tc text-lg font-black text-[#2b2623]">無法取得試算表課程清單</p>
+                            <p class="text-xs text-[#786b5e] font-bold">請確認 Apps Script 部署權限已設為「所有人」，或點擊下方按鈕重試</p>
+                            <button onclick="initCatalog()" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-6 py-2 rounded-xl text-sm font-black">重新載入</button>
+                        </div>
+                    `;
+                }
             }
         }
 
