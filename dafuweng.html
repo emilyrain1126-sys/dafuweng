@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>國文答題大富翁｜書卷雅集</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 引入思源宋體與思源黑體，營造國文書卷氣息 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap');
+        
+        :root {
+            --paper-bg: #f6f1e3;       /* 溫潤宣紙色 */
+            --paper-card: #fcfaf2;     /* 箋紙白 */
+            --ink-black: #2b2623;      /* 松煙墨 */
+            --cinnabar: #a63429;       /* 朱砂印章紅 */
+            --cinnabar-dark: #7c2219;
+            --bamboo: #3a5a40;         /* 竹青綠 */
+            --ochre: #b68938;          /* 泥金／赭石 */
+            --indigo-ink: #2b4555;     /* 靛青藍 */
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--paper-bg);
+            /* 宣紙纖維與淡淡水墨暈染紋理 */
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(182, 137, 56, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 85% 80%, rgba(166, 52, 41, 0.07) 0%, transparent 45%),
+                repeating-linear-gradient(0deg, rgba(43,38,35,0.02) 0px, rgba(43,38,35,0.02) 1px, transparent 1px, transparent 28px),
+                repeating-linear-gradient(90deg, rgba(43,38,35,0.02) 0px, rgba(43,38,35,0.02) 1px, transparent 1px, transparent 28px);
+            color: var(--ink-black);
+            overflow: hidden;
+            height: 100dvh; /* 適配平板瀏覽器動態視窗高度 */
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-serif-tc {
+            font-family: 'Noto Serif TC', serif;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 1280px;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 16px;
+        }
+
+        /* 書卷箋紙主卡片設計 */
+        .scroll-card {
+            background: var(--paper-card);
+            border: 2px solid #d5c7a9;
+            box-shadow: 0 12px 30px rgba(43, 38, 35, 0.12), inset 0 0 0 4px rgba(213, 199, 169, 0.25);
+            position: relative;
+        }
+
+        /* 朱砂印章標籤 */
+        .seal-badge {
+            background-color: var(--cinnabar);
+            color: #fcfaf2;
+            border: 1.5px solid #e5b8b2;
+            box-shadow: 0 2px 4px rgba(166, 52, 41, 0.3);
+            font-family: 'Noto Serif TC', serif;
+            letter-spacing: 0.08em;
+        }
+
+        /* 棋盤外框：古木棋盤質感 */
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 6px;
+            width: 100%;
+            /* 針對平板橫屏與直屏自動計算最佳正方形尺寸 */
+            max-width: min(520px, 78vw, 76dvh);
+            max-height: min(520px, 78vw, 76dvh);
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            background: linear-gradient(145deg, #8c6d46, #6b5030);
+            padding: 10px;
+            border-radius: 16px;
+            border: 3px solid #4a351d;
+            box-shadow: inset 0 2px 6px rgba(255,255,255,0.25), 0 14px 32px rgba(43, 38, 35, 0.22);
+            position: relative;
+        }
+
+        /* 棋盤中央書齋題字區 */
+        .board-center {
+            grid-column: 2 / 6;
+            grid-row: 2 / 6;
+            background: radial-gradient(circle, #fcfaf2 40%, #efe6d0 100%);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #c5b38e;
+            box-shadow: inset 0 0 18px rgba(139, 109, 70, 0.15);
+            padding: 12px;
+            text-align: center;
+        }
+
+        /* 棋盤格子：仿古簡牘 / 宣紙牌面 */
+        .cell {
+            background: linear-gradient(180deg, #fcfaf2 0%, #f1e8d3 100%);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            position: relative;
+            font-weight: 800;
+            text-align: center;
+            padding: 4px;
+            border: 1px solid #cbbba0;
+            border-bottom: 4px solid #a89474;
+            color: var(--ink-black);
+        }
+
+        /* 起點：朱砂紅 */
+        .cell-0 { 
+            background: linear-gradient(180deg, #f3d2ce 0%, #e4aca5 100%) !important; 
+            color: #7c2219 !important; 
+            border-color: #c87a71 !important;
+            border-bottom: 4px solid #a63429 !important; 
+        }
+        /* 機會：泥金黃 */
+        .cell-chance { 
+            background: linear-gradient(180deg, #f8ecc9 0%, #ebd294 100%) !important; 
+            color: #6e4e16 !important; 
+            border-color: #cfa959 !important;
+            border-bottom: 4px solid #b68938 !important; 
+        }
+        /* 命運：靛青藍 */
+        .cell-fate { 
+            background: linear-gradient(180deg, #d3e2ea 0%, #aec8d6 100%) !important; 
+            color: #1f3644 !important; 
+            border-color: #7da1b5 !important;
+            border-bottom: 4px solid #3d6378 !important; 
+        }
+        
+        /* 棋子：圍棋玉石質感 */
+        .player-token {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #fcfaf2;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.45);
+            margin: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: white;
+            font-weight: 900;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* 象牙骨質骰子 (加大適合平板點擊) */
+        .dice {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(145deg, #fffdf7, #ebe1c8);
+            border: 2px solid #c5b38e;
+            border-bottom: 6px solid #9c8660;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--cinnabar);
+            box-shadow: 0 8px 18px rgba(43, 38, 35, 0.18);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .dice:active { transform: translateY(3px); border-bottom-width: 2px; }
+        .dice.rolling { animation: dice-spin 0.35s infinite linear; }
+
+        @keyframes dice-spin {
+            0% { transform: rotate(0deg) scale(1.05); }
+            50% { transform: rotate(180deg) scale(0.95); }
+            100% { transform: rotate(360deg) scale(1.05); }
+        }
+
+        /* 古風立體按鈕 */
+        .btn-ink {
+            transition: all 0.12s ease;
+            border-bottom-width: 4px;
+            touch-action: manipulation;
+        }
+        .btn-ink:active {
+            transform: translateY(2px);
+            border-bottom-width: 1px;
+        }
+
+        .modal-overlay {
+            background: rgba(30, 25, 22, 0.78);
+            backdrop-filter: blur(5px);
+        }
+
+        .scroll-hide::-webkit-scrollbar { width: 6px; }
+        .scroll-hide::-webkit-scrollbar-thumb { background: #c5b38e; border-radius: 10px; }
+
+        .tie-box { animation: pulse-bg 1s infinite alternate; }
+        @keyframes pulse-bg { from { background-color: #f8ecc9; } to { background-color: #fcfaf2; } }
+        
+        .rps-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.1rem;
+            background: #fcfaf2;
+            border: 2px solid #d5c7a9;
+            border-bottom: 5px solid #a89474;
+            border-radius: 1rem;
+            font-size: 2.75rem;
+            transition: all 0.15s;
+        }
+        .rps-btn:active { transform: translateY(3px); border-bottom-width: 1px; background: #f3ead3; }
+
+        .screen-hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- ========================================================= -->
+        <!-- 步驟零：國文課程卷宗目錄 (自動讀取試算表所有分頁)          -->
+        <!-- ========================================================= -->
+        <div id="setup-step-0" class="scroll-card rounded-3xl p-5 md:p-8 h-full flex flex-col max-w-5xl mx-auto w-full overflow-hidden">
+            <!-- 頂部書卷標題與試算表連動按鈕 -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b-2 border-[#e3d7be]">
+                <div class="flex items-center gap-3">
+                    <div class="seal-badge w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-black shrink-0">
+                        文
+                    </div>
+                    <div>
+                        <h1 class="font-serif-tc text-2xl md:text-3xl font-black text-[#2b2623] tracking-wider">
+                            國文答題大富翁 <span class="text-[#a63429] text-lg md:text-xl font-bold">｜課程卷宗</span>
+                        </h1>
+                        <p class="text-xs md:text-sm text-[#6e6259] font-bold mt-0.5">
+                            請點選本堂課要挑戰的課文單元，並輸入老師公佈的「通關密語」
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 self-end sm:self-center">
+                    <span id="sheet-status-badge" class="text-xs font-bold px-3 py-2 rounded-xl bg-[#f3ead3] text-[#6e4e16] border border-[#d5c7a9]">
+                        <i class="fa-solid fa-spinner fa-spin mr-1"></i> 載入卷宗中...
+                    </span>
+                </div>
+            </div>
+
+            <!-- 課程分頁按鈕網格 (自動依據試算表分頁數量生成，精巧多欄設計以容納 30-40 課) -->
+            <div id="course-catalog" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 overflow-y-auto scroll-hide flex-1 pt-3 pr-1 pb-2 content-start">
+                <!-- 由 JS 動態生成每個試算表分頁的課程按鈕 -->
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 步驟一：座號設定 (平板觸控加大版)                         -->
+        <!-- ========================================================= -->
+        <div id="setup-step-1" class="screen-hidden scroll-card rounded-3xl p-6 md:p-8 h-full flex flex-col justify-center max-w-3xl mx-auto w-full overflow-y-auto scroll-hide">
+            <div class="flex items-center justify-between mb-3">
+                <button onclick="backToStep0()" class="px-3.5 py-2 rounded-xl bg-[#efe6d0] hover:bg-[#e4d6b5] text-sm font-black text-[#5c4f42] flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> 返回課程目錄
+                </button>
+                <span id="selected-course-badge" class="seal-badge px-4 py-1.5 rounded-xl text-xs md:text-sm font-black">
+                    已解鎖課程
+                </span>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="font-serif-tc text-3xl md:text-4xl font-black text-[#2b2623] mb-1">登錄學子名冊 (1/2)</h1>
+                <p class="text-[#786b5e] font-bold text-sm md:text-base">請選擇參與人數並輸入各位玩家的座號 (支援 3–7 人)</p>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-[#4a3f35] font-black mb-2 text-base">參與人數：</label>
+                    <select id="player-count" onchange="renderPlayerInputs()" class="w-full p-4 border-2 border-[#cbbba0] rounded-2xl outline-none font-black text-[#a63429] bg-[#f6f1e3] shadow-inner text-xl cursor-pointer">
+                        <option value="3">3 位學子</option>
+                        <option value="4" selected>4 位學子</option>
+                        <option value="5">5 位學子</option>
+                        <option value="6">6 位學子</option>
+                        <option value="7">7 位學子</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[#4a3f35] font-black mb-2.5 text-base">輸入座號 (例如：1、2、3)：</label>
+                    <div id="player-inputs" class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                        <!-- JS 注入 -->
+                    </div>
+                </div>
+                <button onclick="goToStep2()" class="w-full btn-ink bg-[#a63429] hover:bg-[#8f2a20] border-[#691c15] text-[#fcfaf2] font-serif-tc font-black py-4 rounded-2xl text-xl md:text-2xl shadow-lg tracking-wider">
+                    下一步：訂定賞罰規矩 <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 步驟二：獎懲分配                                          -->
+        <!-- ========================================================= -->
+        <div id="setup-step-2" class="screen-hidden scroll-card rounded-3xl p-6 md:p-8 h-full flex flex-col max-w-4xl mx-auto w-full overflow-y-auto scroll-hide">
+            <div class="text-center mb-5">
+                <h1 class="font-serif-tc text-3xl font-black text-[#2b2623] mb-1">訂定賞罰規矩 (2/2)</h1>
+                <p id="step2-desc" class="text-[#786b5e] font-bold text-sm md:text-base">設定名次獎賞與懲處</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 flex-1 overflow-y-auto scroll-hide">
+                <!-- 獎勵區：竹青綠 -->
+                <div class="bg-[#eef3ee] p-5 rounded-2xl border-2 border-[#bfd1c1] flex flex-col">
+                    <h3 class="font-serif-tc font-black text-[#2d4a32] mb-3 text-lg flex items-center gap-2">
+                        <span class="bg-[#3a5a40] text-white w-8 h-8 rounded-xl flex items-center justify-center text-sm">賞</span> 選擇 2 項嘉獎
+                    </h3>
+                    <div id="rewards-list" class="grid grid-cols-2 gap-2.5 mb-4 max-h-40 overflow-y-auto scroll-hide p-1">
+                        <!-- JS 注入 -->
+                    </div>
+                    <div id="reward-assignment" class="hidden space-y-3 p-3.5 bg-[#fcfaf2] rounded-xl border border-[#bfd1c1] shadow-sm mt-auto">
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="w-24 font-black text-[#2d4a32]">👑 狀元 (第一):</span>
+                            <select id="rank1-reward" class="flex-1 p-2 border border-[#bfd1c1] rounded-xl outline-none bg-white font-bold text-[#2b2623]"></select>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="w-24 font-black text-[#2d4a32]">🥈 榜眼 (第二):</span>
+                            <select id="rank2-reward" class="flex-1 p-2 border border-[#bfd1c1] rounded-xl outline-none bg-white font-bold text-[#2b2623]"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 懲罰區：朱砂紅 -->
+                <div class="bg-[#f8ecea] p-5 rounded-2xl border-2 border-[#e2c2bd] flex flex-col">
+                    <h3 id="penalty-title" class="font-serif-tc font-black text-[#8f2a20] mb-3 text-lg flex items-center gap-2">
+                        <span class="bg-[#a63429] text-white w-8 h-8 rounded-xl flex items-center justify-center text-sm">罰</span> 選擇懲處
+                    </h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="custom-penalty-input" placeholder="手動輸入自訂懲處..." class="flex-1 p-2.5 border border-[#e2c2bd] rounded-xl text-sm outline-none bg-white font-bold">
+                        <button onclick="addCustomPenalty()" class="bg-[#a63429] hover:bg-[#8f2a20] text-white px-4 rounded-xl text-sm font-black shadow-sm">新增</button>
+                    </div>
+                    <div id="punishments-list" class="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto scroll-hide mb-4 p-1">
+                        <!-- JS 注入 -->
+                    </div>
+                    <div id="penalty-assignment" class="hidden space-y-3 p-3.5 bg-[#fcfaf2] rounded-xl border border-[#e2c2bd] shadow-sm mt-auto">
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="w-24 font-black text-[#8f2a20]">💀 殿軍 (最後):</span>
+                            <select id="rank-last-penalty" class="flex-1 p-2 border border-[#e2c2bd] rounded-xl outline-none bg-white font-bold text-[#2b2623]"></select>
+                        </div>
+                        <div id="second-last-penalty-row" class="flex items-center gap-2 text-sm">
+                            <span class="w-24 font-black text-[#8f2a20]">⚠️ 倒數第二:</span>
+                            <select id="rank-second-last-penalty" class="flex-1 p-2 border border-[#e2c2bd] rounded-xl outline-none bg-white font-bold text-[#2b2623]"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 mt-auto pt-2">
+                <button onclick="backToStep1()" class="w-1/3 btn-ink bg-[#e4d6b5] hover:bg-[#d6c49b] border-[#b5a278] text-[#4a3f35] font-black py-4 rounded-2xl text-lg">
+                    回上一步
+                </button>
+                <button onclick="preStartDraw()" class="w-2/3 btn-ink bg-[#a63429] hover:bg-[#8f2a20] border-[#691c15] text-[#fcfaf2] font-serif-tc font-black py-4 rounded-2xl text-xl shadow-lg tracking-wider">
+                    🎲 抽籤定序並開局
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- 遊戲主畫面 (針對平板橫向/直向雙模式最佳化)                -->
+        <!-- ========================================================= -->
+        <div id="game-screen" class="screen-hidden h-full flex flex-col lg:grid lg:grid-cols-12 gap-3 md:gap-4">
+            
+            <!-- 左側/上方：執骰控制與文榜排行 -->
+            <div class="lg:col-span-4 flex flex-col gap-3 max-h-[36dvh] lg:max-h-full">
+                <!-- 控制區：現在輪到 & 骰子 -->
+                <div class="scroll-card p-3.5 md:p-5 rounded-3xl text-center flex items-center justify-between lg:flex-col lg:justify-center">
+                    <div class="flex flex-col items-start lg:items-center lg:mb-3">
+                        <span id="game-course-label" class="font-serif-tc text-[#a63429] text-xs font-black mb-1.5 bg-[#f3ead3] border border-[#d5c7a9] px-3 py-0.5 rounded-full max-w-[200px] truncate">
+                            課程名稱
+                        </span>
+                        <span class="text-[#786b5e] text-[11px] font-black tracking-widest mb-1">當前執骰學子</span>
+                        <div id="current-player-info" class="px-7 py-2 rounded-2xl text-white font-black text-2xl md:text-3xl shadow-md transition-all duration-300 border-2 border-[#fcfaf2]">
+                            1號
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div id="dice" class="dice" onclick="rollDice()" title="點擊擲骰">🎲</div>
+                        <div class="text-left min-w-[72px]">
+                            <p class="text-[#786b5e] text-xs font-black leading-none mb-1">擲骰點數</p>
+                            <div id="roll-result" class="font-serif-tc font-black text-3xl text-[#a63429] h-9 leading-tight"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 排行榜：文榜積分 -->
+                <div class="scroll-card p-3.5 md:p-4 rounded-3xl flex-1 overflow-hidden flex flex-col">
+                    <div class="flex justify-between items-center mb-2 pb-1.5 border-b border-[#e3d7be]">
+                        <h2 class="font-serif-tc text-base font-black text-[#2b2623] flex items-center gap-1.5">
+                            <span class="text-[#b68938]">🏅</span> 積分文榜
+                        </h2>
+                        <button onclick="confirmEnd()" class="bg-[#a63429] hover:bg-[#8f2a20] text-[#fcfaf2] text-xs px-3.5 py-1.5 rounded-xl font-black shadow-sm transition-colors">
+                            鳴金收兵
+                        </button>
+                    </div>
+                    <div id="player-stats" class="space-y-1.5 overflow-y-auto flex-1 scroll-hide pr-1">
+                        <!-- JS 注入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側/下方：國文大富翁棋盤 -->
+            <div class="lg:col-span-8 flex-1 scroll-card rounded-3xl flex items-center justify-center p-2 md:p-4 overflow-hidden">
+                <div id="game-board" class="board-container">
+                    <!-- 格子與中央書齋匾額由 JS 注入 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 彈窗系統 -->
+    <div id="modal-container" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+        <div class="bg-[#fcfaf2] w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden transform scale-100 transition-all border-2 border-[#cbbba0]">
+            <div id="modal-header" class="font-serif-tc p-4 text-[#fcfaf2] font-black text-center text-xl md:text-2xl tracking-wider">標題</div>
+            <div id="modal-body" class="p-6 text-center text-[#2b2623] text-base md:text-lg leading-relaxed max-h-[72dvh] overflow-y-auto scroll-hide font-bold">內容</div>
+            <div id="modal-footer" class="p-4 bg-[#f3ead3] flex justify-center gap-3 border-t border-[#d5c7a9]"></div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 已直接綁定您的專屬 Google Apps Script 試算表題庫 API
+         */
+        const DEFAULT_GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbzINRdud7tPxRh0bcLrStE1qq6EIe-gLAHtXItVPckR1So4_AaG-CFs6LnIW1MBg0kWTg/exec"; 
+
+        const initialRewards = ["糖果 5 顆", "免罰寫 1 次", "平時加 5 分", "免課堂回答 1 次"];
+        let punishmentsPool = ["開合跳 10 次", "去任意其他組別進行飯撒", "講笑話(不可以冷場)", "學貓叫 30 秒", "唱一首兒歌"];
+
+        let coursesCatalog = [];
+        let activeCourseName = "";
+        let questionsPool = [];
+
+        let players = [];
+        let currentPlayerIndex = 0;
+        let selectedRewards = [];
+        let selectedPunishments = [];
+        let rewardRankMap = { 1: "無", 2: "無" };
+        let penaltyRankMap = { last: "無", secondLast: "無" };
+        let isRolling = false;
+        const TOTAL_CELLS = 20;
+
+        const CHANCE_CELLS = [3, 10, 17]; // 機會：猜拳
+        const FATE_CELLS = [6, 13, 19];   // 命運：奇遇
+
+        // 網頁載入完成後自動初始化課程目錄與人數欄位
+        window.onload = () => {
+            renderPlayerInputs();
+            initCatalog();
+        };
+
+        // ============================================================================
+        // Apps Script 自動偵測與課程目錄邏輯
+        // ============================================================================
+        function getSavedSheetUrl() {
+            return DEFAULT_GOOGLE_SHEET_URL;
+        }
+
+        async function initCatalog() {
+            const badge = document.getElementById('sheet-status-badge');
+            const container = document.getElementById('course-catalog');
+            const apiUrl = getSavedSheetUrl();
+
+            badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> 載入卷宗中...`;
+            container.innerHTML = '';
+
+            try {
+                const res = await fetch(`${apiUrl}?action=list`);
+                const data = await res.json();
+
+                if (data.status === 'ok' && Array.isArray(data.courses)) {
+                    coursesCatalog = data.courses;
+                    badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#eef3ee] text-[#2d4a32] border border-[#bfd1c1]";
+                    badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> 共收錄 ${coursesCatalog.length} 卷`;
+                    renderCourseCatalog();
+                } else {
+                    throw new Error(data.message || "回傳格式異常");
+                }
+            } catch (err) {
+                console.error("載入課程清單失敗:", err);
+                badge.className = "text-xs font-black px-3 py-2 rounded-xl bg-[#f8ecea] text-[#8f2a20] border border-[#e2c2bd]";
+                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> 卷宗連線異常`;
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-12 text-center space-y-3">
+                        <div class="text-4xl text-[#a63429]"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <p class="font-serif-tc text-lg font-black text-[#2b2623]">無法取得試算表課程清單</p>
+                        <p class="text-xs text-[#786b5e] font-bold">請確認 Apps Script 部署權限已設為「所有人」，或點擊下方按鈕重試</p>
+                        <button onclick="initCatalog()" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-6 py-2 rounded-xl text-sm font-black">重新載入</button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderCourseCatalog() {
+            const container = document.getElementById('course-catalog');
+            container.innerHTML = '';
+
+            if (coursesCatalog.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-center space-y-3">
+                        <div class="text-4xl text-[#a63429]"><i class="fa-solid fa-book-open"></i></div>
+                        <p class="font-serif-tc text-lg font-black text-[#2b2623]">目前尚未載入任何課程題庫</p>
+                        <p class="text-sm text-[#786b5e] font-bold">請確認試算表內已建立課程分頁並重新整理網頁</p>
+                    </div>
+                `;
+                return;
+            }
+
+            coursesCatalog.forEach((course, idx) => {
+                const btn = document.createElement('button');
+                const status = course.status || (course.hasLock ? 'active' : 'open');
+
+                if (status === 'disabled') {
+                    // 全域鎖定模式下，未設密碼的卷宗一律封存禁用
+                    btn.disabled = true;
+                    btn.className = "text-left p-2.5 rounded-xl border border-[#d6cfc2] bg-[#ebe5d8] opacity-55 cursor-not-allowed flex flex-col justify-between";
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between w-full mb-1.5">
+                            <span class="font-serif-tc text-[10px] font-black px-1.5 py-0.5 rounded bg-[#dcd4c4] text-[#786b5e]">卷${idx + 1}</span>
+                            <span class="text-[10px] font-black text-[#786b5e] bg-[#e2dbd0] px-1.5 py-0.5 rounded">
+                                <i class="fa-solid fa-ban mr-0.5"></i>未開放
+                            </span>
+                        </div>
+                        <div class="font-serif-tc font-black text-xs md:text-sm text-[#786b5e] line-clamp-2 leading-snug">
+                            ${course.name}
+                        </div>
+                    `;
+                } else if (status === 'active') {
+                    // 全域鎖定模式下，有設密碼的當堂課程（暖金高亮＋驗證碼解鎖）
+                    btn.onclick = () => selectCourse(course);
+                    btn.className = "btn-ink text-left p-2.5 rounded-xl border border-b-3 bg-[#fbf2d8] hover:bg-[#f5e6bc] border-[#cfa959] border-b-[#a37b2c] flex flex-col justify-between transition-all shadow-sm group";
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between w-full mb-1.5">
+                            <span class="font-serif-tc text-[10px] font-black px-1.5 py-0.5 rounded border bg-[#a63429] text-[#fcfaf2] border-[#8f2a20]">卷${idx + 1}</span>
+                            <span class="text-[10px] font-black bg-[#f8ecea] text-[#a63429] border border-[#e2c2bd] px-1.5 py-0.5 rounded">
+                                <i class="fa-solid fa-key mr-0.5"></i>${course.count}題
+                            </span>
+                        </div>
+                        <div class="font-serif-tc font-black text-xs md:text-sm text-[#2b2623] group-hover:text-[#a63429] line-clamp-2 leading-snug">
+                            ${course.name}
+                        </div>
+                    `;
+                } else {
+                    // 全部課程皆未設密碼時的自由開放狀態
+                    btn.onclick = () => selectCourse(course);
+                    btn.className = "btn-ink text-left p-2.5 rounded-xl border border-b-3 bg-[#fcfaf2] hover:bg-[#f3ead3] border-[#cbbba0] border-b-[#9c8660] flex flex-col justify-between transition-all shadow-sm group";
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between w-full mb-1.5">
+                            <span class="font-serif-tc text-[10px] font-black px-1.5 py-0.5 rounded border bg-[#f3ead3] text-[#a63429] border-[#e3d7be]">卷${idx + 1}</span>
+                            <span class="text-[10px] font-black bg-[#eef3ee] text-[#2d4a32] border border-[#bfd1c1] px-1.5 py-0.5 rounded">
+                                <i class="fa-solid fa-lock-open mr-0.5"></i>${course.count}題
+                            </span>
+                        </div>
+                        <div class="font-serif-tc font-black text-xs md:text-sm text-[#2b2623] group-hover:text-[#a63429] line-clamp-2 leading-snug">
+                            ${course.name}
+                        </div>
+                    `;
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        function selectCourse(course) {
+            const status = course.status || (course.hasLock ? 'active' : 'open');
+            if (status === 'disabled') return;
+            if (status === 'open') {
+                // 全部未設密碼時直接開啟
+                unlockCourseWithCode(course.name, "");
+                return;
+            }
+
+            const body = `
+                <div class="space-y-4">
+                    <p class="text-sm text-[#5c4f42] font-bold">請輸入老師公佈的「<span class="text-[#a63429]">${course.name}</span>」通關密語：</p>
+                    <input type="text" id="course-passcode-input" placeholder="請輸入驗證碼..." autocomplete="off"
+                        onkeydown="if(event.key==='Enter') submitCoursePasscode('${course.name.replace(/'/g, "\\'")}')"
+                        class="w-full p-3.5 border-2 border-[#cbbba0] rounded-2xl text-center text-xl font-black tracking-widest outline-none bg-white text-[#2b2623] focus:border-[#a63429]">
+                    <p id="passcode-error-msg" class="hidden text-xs font-black text-[#a63429]"></p>
+                </div>
+            `;
+            showModal("🔐 啟封課程卷宗", body, "bg-[#a63429]", null, true);
+
+            const footer = document.getElementById('modal-footer');
+            footer.innerHTML = `
+                <button onclick="closeModal()" class="btn-ink bg-[#e4d6b5] border-[#b5a278] text-[#4a3f35] px-6 py-2.5 rounded-xl font-black text-sm">取消</button>
+                <button id="unlock-submit-btn" onclick="submitCoursePasscode('${course.name.replace(/'/g, "\\'")}')" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-8 py-2.5 rounded-xl font-serif-tc font-black text-base shadow-md">確認啟封</button>
+            `;
+            setTimeout(() => {
+                const inp = document.getElementById('course-passcode-input');
+                if (inp) inp.focus();
+            }, 100);
+        }
+
+        function submitCoursePasscode(courseName) {
+            const inp = document.getElementById('course-passcode-input');
+            const code = inp ? inp.value.trim() : "";
+            unlockCourseWithCode(courseName, code);
+        }
+
+        async function unlockCourseWithCode(courseName, code) {
+            const btn = document.getElementById('unlock-submit-btn');
+            const errEl = document.getElementById('passcode-error-msg');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> 驗證中...`;
+            }
+            if (errEl) errEl.classList.add('hidden');
+
+            try {
+                const apiUrl = getSavedSheetUrl();
+                const url = `${apiUrl}?action=unlock&sheet=${encodeURIComponent(courseName)}&code=${encodeURIComponent(code)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (data.status === 'ok' && Array.isArray(data.questions) && data.questions.length > 0) {
+                    activeCourseName = courseName;
+                    questionsPool = data.questions;
+                    closeModal();
+
+                    document.getElementById('selected-course-badge').innerText = `📜 ${courseName}（${questionsPool.length} 題）`;
+                    document.getElementById('game-course-label').innerText = courseName;
+
+                    document.getElementById('setup-step-0').classList.add('screen-hidden');
+                    document.getElementById('setup-step-1').classList.remove('screen-hidden');
+                } else if (data.status === 'wrong_code') {
+                    if (errEl) {
+                        errEl.innerText = data.message || "驗證碼錯誤，請重新輸入！";
+                        errEl.classList.remove('hidden');
+                    } else {
+                        showModal("驗證失敗", data.message || "驗證碼錯誤！", "bg-[#a63429]");
+                    }
+                } else {
+                    showModal("載入失敗", data.message || "此分頁目前沒有可用的題目！", "bg-[#a63429]");
+                }
+            } catch (err) {
+                console.error("解鎖課程失敗:", err);
+                showModal("連線異常", "無法連線至試算表驗證，請檢查網路狀態！", "bg-[#a63429]");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "確認啟封";
+                }
+            }
+        }
+
+        function backToStep0() {
+            document.getElementById('setup-step-1').classList.add('screen-hidden');
+            document.getElementById('setup-step-0').classList.remove('screen-hidden');
+        }
+
+        // ============================================================================
+        // 步驟一與步驟二：玩家座號與賞罰設定
+        // ============================================================================
+        function renderPlayerInputs() {
+            const count = parseInt(document.getElementById('player-count').value);
+            const container = document.getElementById('player-inputs');
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                container.innerHTML += `
+                    <div class="flex items-center gap-2 bg-[#f3ead3] p-2.5 rounded-2xl border-2 border-[#cbbba0] shadow-inner">
+                        <span class="font-serif-tc text-xs font-black text-[#a63429] bg-[#fcfaf2] px-2 py-1 rounded-lg border border-[#d5c7a9]">學子${i + 1}</span>
+                        <input type="number" id="seat-p${i}" placeholder="座號" class="w-full p-2 border border-[#cbbba0] rounded-xl text-base font-black outline-none bg-white text-center text-[#2b2623]">
+                    </div>
+                `;
+            }
+        }
+
+        function goToStep2() {
+            const count = parseInt(document.getElementById('player-count').value);
+            let seats = [];
+            for (let i = 0; i < count; i++) {
+                const val = document.getElementById(`seat-p${i}`).value.trim();
+                if (!val) {
+                    showModal("名冊未齊", "請輸入所有參與學子的座號！", "bg-[#b68938]");
+                    return;
+                }
+                seats.push(val);
+            }
+            if (new Set(seats).size !== seats.length) {
+                showModal("座號重複", "各位學子的座號不可重複，請重新確認！", "bg-[#b68938]");
+                return;
+            }
+
+            const desc = document.getElementById('step2-desc');
+            const penaltyTitle = document.getElementById('penalty-title');
+            const secondLastRow = document.getElementById('second-last-penalty-row');
+
+            if (count === 3) {
+                desc.innerText = "三人對弈：請選擇 2 項嘉獎與 1 項懲處";
+                penaltyTitle.innerHTML = `<span class="bg-[#a63429] text-white w-8 h-8 rounded-xl flex items-center justify-center text-sm">罰</span> 選擇 1 項懲處`;
+                secondLastRow.classList.add('screen-hidden');
+            } else {
+                desc.innerText = "多人對弈：請選擇 2 項嘉獎與 2 項懲處";
+                penaltyTitle.innerHTML = `<span class="bg-[#a63429] text-white w-8 h-8 rounded-xl flex items-center justify-center text-sm">罰</span> 選擇 2 項懲處`;
+                secondLastRow.classList.remove('screen-hidden');
+            }
+
+            document.getElementById('setup-step-1').classList.add('screen-hidden');
+            document.getElementById('setup-step-2').classList.remove('screen-hidden');
+            renderSetupLists();
+        }
+
+        function backToStep1() {
+            document.getElementById('setup-step-2').classList.add('screen-hidden');
+            document.getElementById('setup-step-1').classList.remove('screen-hidden');
+        }
+
+        function addCustomPenalty() {
+            const input = document.getElementById('custom-penalty-input');
+            if (input.value.trim()) {
+                punishmentsPool.push(input.value.trim());
+                input.value = '';
+                renderSetupLists();
+            }
+        }
+
+        function renderSetupLists() {
+            const rList = document.getElementById('rewards-list');
+            const pList = document.getElementById('punishments-list');
+            rList.innerHTML = initialRewards.map(r => `
+                <label class="flex items-center space-x-2 bg-[#fcfaf2] p-2.5 rounded-xl border border-[#bfd1c1] text-xs font-bold cursor-pointer shadow-sm hover:bg-white">
+                    <input type="checkbox" name="reward" value="${r}" onchange="handleRewardChange()" class="w-4 h-4 accent-[#3a5a40]">
+                    <span class="truncate text-[#2b2623]">${r}</span>
+                </label>
+            `).join('');
+            pList.innerHTML = punishmentsPool.map(p => `
+                <label class="flex items-center space-x-2 bg-[#fcfaf2] p-2.5 rounded-xl border border-[#e2c2bd] text-xs font-bold cursor-pointer shadow-sm hover:bg-white">
+                    <input type="checkbox" name="punishment" value="${p}" onchange="handlePenaltyChange()" class="w-4 h-4 accent-[#a63429]">
+                    <span class="truncate text-[#2b2623]">${p}</span>
+                </label>
+            `).join('');
+        }
+
+        function handleRewardChange() {
+            const selected = Array.from(document.querySelectorAll('input[name="reward"]:checked')).map(el => el.value);
+            if (selected.length > 2) {
+                document.querySelectorAll('input[name="reward"]:checked')[0].checked = false;
+                handleRewardChange();
+                return;
+            }
+            selectedRewards = selected;
+            const div = document.getElementById('reward-assignment');
+            if (selected.length === 2) {
+                div.classList.remove('hidden');
+                document.getElementById('rank1-reward').innerHTML = selected.map(r => `<option value="${r}">${r}</option>`).join('');
+                document.getElementById('rank2-reward').innerHTML = selected.map(r => `<option value="${r}">${r}</option>`).join('');
+                document.getElementById('rank2-reward').selectedIndex = 1;
+            } else {
+                div.classList.add('hidden');
+            }
+        }
+
+        function handlePenaltyChange() {
+            const count = parseInt(document.getElementById('player-count').value);
+            const limit = (count === 3) ? 1 : 2;
+            const selected = Array.from(document.querySelectorAll('input[name="punishment"]:checked')).map(el => el.value);
+
+            if (selected.length > limit) {
+                document.querySelectorAll('input[name="punishment"]:checked')[0].checked = false;
+                handlePenaltyChange();
+                return;
+            }
+
+            selectedPunishments = selected;
+            const div = document.getElementById('penalty-assignment');
+            if (selected.length === limit) {
+                div.classList.remove('hidden');
+                document.getElementById('rank-last-penalty').innerHTML = selected.map(p => `<option value="${p}">${p}</option>`).join('');
+                if (limit === 2) {
+                    document.getElementById('rank-second-last-penalty').innerHTML = selected.map(p => `<option value="${p}">${p}</option>`).join('');
+                    document.getElementById('rank-second-last-penalty').selectedIndex = 1;
+                }
+            } else {
+                div.classList.add('hidden');
+            }
+        }
+
+        function preStartDraw() {
+            const count = parseInt(document.getElementById('player-count').value);
+            const penaltyLimit = (count === 3) ? 1 : 2;
+
+            if (selectedRewards.length < 2 || selectedPunishments.length < penaltyLimit) {
+                showModal("規矩未定", "請先勾選足夠的嘉獎與懲處項目並分配名次！", "bg-[#b68938]");
+                return;
+            }
+
+            rewardRankMap[1] = document.getElementById('rank1-reward').value;
+            rewardRankMap[2] = document.getElementById('rank2-reward').value;
+            penaltyRankMap.last = document.getElementById('rank-last-penalty').value;
+            if (count > 3) penaltyRankMap.secondLast = document.getElementById('rank-second-last-penalty').value;
+
+            let rawSeats = [];
+            for (let i = 0; i < count; i++) rawSeats.push(document.getElementById(`seat-p${i}`).value.trim());
+
+            let drawBody = `
+                <div class="flex flex-col items-center gap-4 py-6">
+                    <p class="text-[#5c4f42] font-bold mb-2 text-base">🎲 正在為各位學子抽籤決定執骰順序...</p>
+                    <div id="shuffle-display" class="flex flex-wrap justify-center gap-3">
+                        ${rawSeats.map(s => `<div class="w-14 h-14 bg-[#f3ead3] rounded-2xl flex items-center justify-center font-black text-[#a63429] border-2 border-[#cbbba0] text-lg">${s}號</div>`).join('')}
+                    </div>
+                </div>
+            `;
+            showModal("抽籤定序", drawBody, "bg-[#2b4555]", null, true);
+
+            let counter = 0;
+            const interval = setInterval(() => {
+                const disp = document.getElementById('shuffle-display');
+                if (!disp) return clearInterval(interval);
+                const items = Array.from(disp.children).sort(() => Math.random() - 0.5);
+                disp.innerHTML = '';
+                items.forEach(it => disp.appendChild(it));
+                if (++counter > 12) {
+                    clearInterval(interval);
+                    const shuffled = rawSeats.sort(() => Math.random() - 0.5);
+                    // 古風色系棋子：朱砂、靛青、竹青、泥金、紫檀、黛藍、墨灰
+                    const colors = ['#a63429', '#2b4555', '#3a5a40', '#b68938', '#6d3b47', '#3d6378', '#4a423b'];
+                    players = shuffled.map((s, idx) => ({
+                        id: idx,
+                        seatNo: s,
+                        color: colors[idx % colors.length],
+                        pos: 0,
+                        score: 0,
+                        skipNextTurn: false
+                    }));
+
+                    disp.innerHTML = players.map((p, i) => `
+                        <div class="w-16 h-16 bg-[#3a5a40] text-[#fcfaf2] rounded-2xl flex flex-col items-center justify-center font-black shadow-lg animate-bounce text-xs border-2 border-[#bfd1c1]">
+                            <span class="opacity-80 text-[10px]">第${i + 1}位</span>
+                            <span class="text-base">${p.seatNo}號</span>
+                        </div>
+                    `).join('');
+                    document.getElementById('modal-footer').innerHTML = `
+                        <button onclick="closeModal(); startGameUI();" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-10 py-3 rounded-2xl font-serif-tc font-black text-lg shadow-lg">
+                            展開文局！
+                        </button>
+                    `;
+                }
+            }, 100);
+        }
+
+        function startGameUI() {
+            document.getElementById('setup-step-2').classList.add('screen-hidden');
+            document.getElementById('game-screen').classList.remove('screen-hidden');
+            createBoard();
+            updateUI();
+            placeTokens();
+        }
+
+        // ============================================================================
+        // 核心遊戲邏輯 (分數最低 0 分、選項 A-D、答題顯示正解並手動按下一步)
+        // ============================================================================
+        function createBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            // 棋盤中央書齋匾額
+            const centerEl = document.createElement('div');
+            centerEl.className = 'board-center';
+            centerEl.innerHTML = `
+                <div class="seal-badge px-3 py-1 rounded-lg text-xs md:text-sm font-black mb-2">國文科・互動文局</div>
+                <h3 class="font-serif-tc text-xl md:text-2xl font-black text-[#2b2623] tracking-widest leading-snug line-clamp-2">
+                    ${activeCourseName}
+                </h3>
+                <p class="text-[11px] md:text-xs text-[#786b5e] font-bold mt-2">
+                    📚 題目 +100/-50 ｜ ❓ 機會猜拳 ｜ ✨ 命運奇遇
+                </p>
+            `;
+            board.appendChild(centerEl);
+
+            const posMap = [];
+            for (let i = 1; i <= 6; i++) posMap.push({ r: 1, c: i });
+            for (let i = 2; i <= 5; i++) posMap.push({ r: i, c: 6 });
+            for (let i = 6; i >= 1; i--) posMap.push({ r: 6, c: i });
+            for (let i = 5; i >= 2; i--) posMap.push({ r: i, c: 1 });
+
+            posMap.forEach((pos, idx) => {
+                const cell = document.createElement('div');
+                cell.className = `cell cell-${idx} col-start-${pos.c} row-start-${pos.r} shadow-sm`;
+                let type = "📚 題目";
+                if (idx === 0) {
+                    type = "🚩 起點";
+                    cell.classList.add('cell-0');
+                } else if (CHANCE_CELLS.includes(idx)) {
+                    type = "❓ 機會";
+                    cell.classList.add('cell-chance');
+                } else if (FATE_CELLS.includes(idx)) {
+                    type = "✨ 命運";
+                    cell.classList.add('cell-fate');
+                }
+                cell.innerHTML = `<div class="mb-1 opacity-90 font-serif-tc font-black text-xs md:text-sm">${type}</div><div id="tokens-${idx}" class="flex flex-wrap justify-center gap-0.5"></div>`;
+                board.appendChild(cell);
+            });
+        }
+
+        function updateUI() {
+            const stats = document.getElementById('player-stats');
+            stats.innerHTML = [...players].sort((a, b) => b.score - a.score).map((p, idx) => `
+                <div class="p-2.5 rounded-xl bg-[#f9f4e6] border-l-4 border border-[#e3d7be] flex justify-between items-center shadow-sm" style="border-left-color: ${p.color}">
+                    <div class="flex items-center gap-2">
+                        <span class="font-serif-tc text-xs font-black text-[#786b5e]">#${idx + 1}</span>
+                        <span class="font-black text-sm text-[#2b2623]">${p.seatNo}號</span>
+                        ${p.skipNextTurn ? '<span class="text-[10px] bg-[#f8ecea] text-[#a63429] px-1.5 py-0.5 rounded font-black">停一回合</span>' : ''}
+                    </div>
+                    <span class="bg-[#fcfaf2] border border-[#d5c7a9] px-2.5 py-0.5 rounded-full text-xs font-black text-[#a63429] shadow-sm">${p.score} 分</span>
+                </div>
+            `).join('');
+
+            const p = players[currentPlayerIndex];
+            const info = document.getElementById('current-player-info');
+            info.innerText = `${p.seatNo}號`;
+            info.style.backgroundColor = p.color;
+        }
+
+        function placeTokens() {
+            for (let i = 0; i < TOTAL_CELLS; i++) {
+                const h = document.getElementById(`tokens-${i}`);
+                if (h) h.innerHTML = '';
+            }
+            players.forEach(p => {
+                const h = document.getElementById(`tokens-${p.pos}`);
+                if (h) {
+                    const t = document.createElement('div');
+                    t.className = 'player-token';
+                    t.style.backgroundColor = p.color;
+                    t.innerText = p.seatNo;
+                    h.appendChild(t);
+                }
+            });
+        }
+
+        function rollDice() {
+            if (isRolling) return;
+            const p = players[currentPlayerIndex];
+            if (p.skipNextTurn) {
+                p.skipNextTurn = false;
+                showModal("暫停一回合", `學子 <b>${p.seatNo}號</b> 本回合暫停行動一次！`, "bg-[#5c4f42]", nextTurn);
+                return;
+            }
+
+            isRolling = true;
+            const d = document.getElementById('dice');
+            const res = document.getElementById('roll-result');
+            d.classList.add('rolling');
+            res.innerText = "";
+
+            setTimeout(() => {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                d.classList.remove('rolling');
+                d.innerText = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][roll - 1];
+                res.innerText = `${roll} 步`;
+                p.pos = (p.pos + roll) % TOTAL_CELLS;
+                placeTokens();
+                setTimeout(() => handleCellLanding(p.pos), 600);
+            }, 800);
+        }
+
+        function handleCellLanding(pos) {
+            if (pos === 0) {
+                showModal("🚩 榮歸起點", "路過起點，嘉獎積分！<br><span class='text-3xl font-serif-tc font-black text-[#3a5a40] block mt-2'>積分 +50</span>", "bg-[#3a5a40]", () => {
+                    players[currentPlayerIndex].score += 50;
+                    nextTurn();
+                });
+            } else if (CHANCE_CELLS.includes(pos)) {
+                handleChanceEvent();
+            } else if (FATE_CELLS.includes(pos)) {
+                handleFateEvent();
+            } else {
+                handleQuiz();
+            }
+        }
+
+        function handleQuiz() {
+            const q = questionsPool[Math.floor(Math.random() * questionsPool.length)];
+            const p = players[currentPlayerIndex];
+            const labels = ['A', 'B', 'C', 'D'];
+            window.currentActiveQuestion = q;
+
+            let body = `<p class="font-serif-tc text-lg md:text-xl mb-4 font-black text-[#2b2623] text-left leading-relaxed">${q.q}</p><div id="quiz-options-box" class="grid gap-2">`;
+            q.a.forEach((ans, i) => {
+                body += `
+                    <button id="quiz-opt-${i}" onclick="checkAnswer(${i}, ${q.correct})" class="btn-ink w-full py-2.5 px-3.5 bg-[#f9f4e6] hover:bg-[#f1e6c9] border-2 border-[#cbbba0] border-b-3 border-b-[#9c8660] rounded-xl text-left font-bold text-[#2b2623] text-sm md:text-base flex items-center gap-2.5 transition-all">
+                        <span class="font-serif-tc w-6 h-6 rounded-md bg-[#a63429] text-[#fcfaf2] flex items-center justify-center text-xs font-black shrink-0">${labels[i]}</span>
+                        <span class="leading-snug">${ans}</span>
+                    </button>
+                `;
+            });
+            body += `</div><div id="quiz-feedback-area" class="hidden mt-4 p-3 rounded-xl border-2 text-center"></div>`;
+            showModal(`📜 ${p.seatNo}號 學子接題`, body, "bg-[#a63429]", null, true);
+        }
+
+        window.checkAnswer = (choice, correct) => {
+            const labels = ['A', 'B', 'C', 'D'];
+            const q = window.currentActiveQuestion;
+            const p = players[currentPlayerIndex];
+
+            // 鎖定所有選項按鈕並標示正確與錯誤顏色
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById(`quiz-opt-${i}`);
+                if (!btn) continue;
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-[#f1e6c9]');
+                if (i === correct) {
+                    btn.className = "w-full py-2.5 px-3.5 bg-[#eef3ee] border-2 border-[#3a5a40] rounded-xl text-left font-black text-[#2d4a32] text-sm md:text-base flex items-center gap-2.5 shadow-sm";
+                } else if (i === choice && choice !== correct) {
+                    btn.className = "w-full py-2.5 px-3.5 bg-[#f8ecea] border-2 border-[#a63429] rounded-xl text-left font-bold text-[#8f2a20] text-sm md:text-base flex items-center gap-2.5 opacity-85";
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            }
+
+            const fb = document.getElementById('quiz-feedback-area');
+            fb.classList.remove('hidden');
+
+            if (choice === correct) {
+                p.score += 100;
+                fb.className = "mt-4 p-3 rounded-xl border-2 border-[#bfd1c1] bg-[#eef3ee] text-[#2d4a32]";
+                fb.innerHTML = `<div class="font-serif-tc text-lg font-black">🎉 妙答中第！積分 +100 分</div>`;
+            } else {
+                // 分數最低為 0 分，不變成負數
+                p.score = Math.max(0, p.score - 50);
+                const correctText = q ? `${labels[correct]}. ${q.a[correct]}` : labels[correct];
+                fb.className = "mt-4 p-3 rounded-xl border-2 border-[#e2c2bd] bg-[#f8ecea] text-[#8f2a20]";
+                fb.innerHTML = `
+                    <div class="font-serif-tc text-lg font-black">😢 惜哉落第... 積分 -50 分（最低 0 分）</div>
+                    <div class="text-sm font-black text-[#2d4a32] mt-1">✔ 正確答案：${correctText}</div>
+                `;
+            }
+
+            // 顯示「下一步」按鈕，由學生確認正解後才繼續
+            const footer = document.getElementById('modal-footer');
+            footer.innerHTML = `
+                <button onclick="closeModal(); nextTurn();" class="btn-ink bg-[#2b4555] hover:bg-[#1f3340] border-[#16252e] text-[#fcfaf2] px-10 py-2.5 rounded-2xl font-serif-tc font-black text-base shadow-md">
+                    下一步 <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            `;
+        };
+
+        function handleChanceEvent() {
+            let body = `
+                <p class="mb-4 font-bold text-base text-[#4a3f35]">與書齋先生猜拳對決！勝出者嘉獎 <span class="text-[#3a5a40] font-black">+150 分</span></p>
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="playRPS(0)" class="rps-btn">✊<span class="text-xs font-black text-[#5c4f42] mt-1">石頭</span></button>
+                    <button onclick="playRPS(1)" class="rps-btn">✋<span class="text-xs font-black text-[#5c4f42] mt-1">布</span></button>
+                    <button onclick="playRPS(2)" class="rps-btn">✌️<span class="text-xs font-black text-[#5c4f42] mt-1">剪刀</span></button>
+                </div>
+            `;
+            showModal("❓ 機會・文人猜拳", body, "bg-[#b68938]", null, true);
+        }
+
+        window.playRPS = (pChoice) => {
+            const sChoice = Math.floor(Math.random() * 3);
+            const icons = ["✊ 石頭", "✋ 布", "✌️ 剪刀"];
+            const p = players[currentPlayerIndex];
+            let resultText = `學子出招：<b>${icons[pChoice]}</b><br>先生出招：<b>${icons[sChoice]}</b><br><br>`;
+            if (pChoice === sChoice) {
+                resultText += `<span class="font-serif-tc text-2xl font-black text-[#5c4f42]">平分秋色！無事發生。</span>`;
+            } else if ((pChoice === 0 && sChoice === 2) || (pChoice === 1 && sChoice === 0) || (pChoice === 2 && sChoice === 1)) {
+                resultText += `<span class="font-serif-tc text-2xl font-black text-[#3a5a40]">🎉 棋高一著！積分 +150！</span>`;
+                p.score += 150;
+            } else {
+                resultText += `<span class="font-serif-tc text-2xl font-black text-[#a63429]">略遜一籌... 無事發生。</span>`;
+            }
+            showModal("猜拳結果", resultText, "bg-[#2b4555]", nextTurn);
+        };
+
+        function handleFateEvent() {
+            const p = players[currentPlayerIndex];
+            const events = [
+                {
+                    t: "【食破天驚】天上掉下洋芋片！積分 +150 分！",
+                    action: () => { p.score += 150; nextTurn(); }
+                },
+                {
+                    t: "【叫他罰寫】舉報有人上課說髒話，指定他扣除 150 分！",
+                    action: () => promptTargetSelect("扣除 150 分", (t) => { t.score = Math.max(0, t.score - 150); nextTurn(); })
+                },
+                {
+                    t: "【姍姍來遲】說好的 12 點泛舟呢？指定一位學子下一輪暫停行動！",
+                    action: () => promptTargetSelect("暫停一回合", (t) => { t.skipNextTurn = true; nextTurn(); })
+                },
+                {
+                    t: "【財富均衡】和一位指定學子平分芭樂（劃掉）積分！",
+                    action: () => promptTargetSelect("平均積分", (t) => {
+                        const avg = Math.max(0, Math.floor((p.score + t.score) / 2));
+                        p.score = avg;
+                        t.score = avg;
+                        nextTurn();
+                    })
+                },
+                {
+                    t: "【和平使者】偷偷把營養午餐的螢光咖哩換掉，眾人向你致敬，每人各給你 50 分！",
+                    action: () => {
+                        players.forEach(o => {
+                            if (o.id !== p.id) {
+                                const transfer = Math.min(50, o.score);
+                                o.score -= transfer;
+                                p.score += transfer;
+                            }
+                        });
+                        nextTurn();
+                    }
+                },
+                {
+                    t: "【侏儸紀世界】突然出現翼手龍，偷走你 100 分（此分數不歸翼手龍所有）。",
+                    action: () => { p.score = Math.max(0, p.score - 100); nextTurn(); }
+                }
+            ];
+            const ev = events[Math.floor(Math.random() * events.length)];
+            showModal("✨ 命運・文壇奇遇", ev.t, "bg-[#2b4555]", ev.action);
+        }
+
+        function promptTargetSelect(label, callback) {
+            const p = players[currentPlayerIndex];
+            const others = players.filter(o => o.id !== p.id);
+            let body = `<p class="mb-4 font-bold text-[#4a3f35] text-base">請選擇指定對象【${label}】：</p><div class="grid grid-cols-2 gap-3">`;
+            others.forEach(o => {
+                body += `<button onclick="executeTarget(${o.id})" class="btn-ink p-3.5 bg-[#fcfaf2] border-2 rounded-2xl font-black text-base shadow-sm" style="border-color:${o.color}; color:${o.color}">${o.seatNo}號 (${o.score}分)</button>`;
+            });
+            body += `</div>`;
+            window.tempCB = callback;
+            showModal("選擇指定目標", body, "bg-[#2b2623]", null, true);
+        }
+
+        window.executeTarget = (tid) => {
+            closeModal();
+            if (window.tempCB) window.tempCB(players.find(o => o.id === tid));
+        };
+
+        function nextTurn() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            isRolling = false;
+            updateUI();
+        }
+
+        function confirmEnd() {
+            showModal("鳴金收兵", "確定要結束本局並結算最終金榜名次嗎？", "bg-[#5c4f42]", endGame);
+            const footer = document.getElementById('modal-footer');
+            footer.innerHTML = `
+                <button onclick="closeModal()" class="btn-ink bg-[#e4d6b5] border-[#b5a278] text-[#4a3f35] px-6 py-2.5 rounded-xl font-black">繼續對弈</button>
+                <button onclick="closeModal(); endGame();" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-8 py-2.5 rounded-xl font-black shadow-md">確定結算</button>
+            `;
+        }
+
+        function endGame() {
+            const scoreGroups = {};
+            players.forEach(p => {
+                if (!scoreGroups[p.score]) scoreGroups[p.score] = [];
+                scoreGroups[p.score].push(p);
+            });
+            const tiedScores = Object.keys(scoreGroups).map(Number).filter(s => scoreGroups[s].length > 1).sort((a, b) => b - a);
+
+            if (tiedScores.length > 0) {
+                let tieBody = `
+                    <div class="flex flex-col items-center gap-4 py-4">
+                        <p class="font-serif-tc text-[#a63429] font-black animate-pulse text-xl">⚖️ 同分學子抽籤決定名次中...</p>
+                        <div class="space-y-3 w-full">
+                            ${tiedScores.map(s => `
+                                <div class="p-3 bg-[#f8ecc9] rounded-2xl border-2 border-[#cfa959] tie-box">
+                                    <div id="group-${s}" class="flex flex-wrap justify-center gap-2">
+                                        ${scoreGroups[s].map(p => `<div class="w-14 h-14 bg-[#fcfaf2] rounded-xl flex items-center justify-center font-black border border-[#cbbba0] shadow-sm">${p.seatNo}號</div>`).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                showModal("同分抽籤定榜", tieBody, "bg-[#b68938]", null, true);
+                let shuffles = 0;
+                const interval = setInterval(() => {
+                    tiedScores.forEach(s => {
+                        const el = document.getElementById(`group-${s}`);
+                        if (!el) return;
+                        const items = Array.from(el.children).sort(() => Math.random() - 0.5);
+                        el.innerHTML = '';
+                        items.forEach(it => el.appendChild(it));
+                    });
+                    if (++shuffles > 15) {
+                        clearInterval(interval);
+                        const finalOrder = [];
+                        const sorted = Object.keys(scoreGroups).map(Number).sort((a, b) => b - a);
+                        sorted.forEach(s => finalOrder.push(...scoreGroups[s].sort(() => Math.random() - 0.5)));
+                        setTimeout(() => renderFinal(finalOrder), 300);
+                    }
+                }, 100);
+            } else {
+                renderFinal([...players].sort((a, b) => b.score - a.score));
+            }
+        }
+
+        function renderFinal(rank) {
+            const pCount = rank.length;
+            let body = `<div class="text-left space-y-2.5">`;
+            rank.forEach((p, idx) => {
+                let prize = "😐 平安過關";
+                let color = "text-[#786b5e]";
+                if (idx === 0) {
+                    prize = `👑 <b>狀元嘉獎：【${rewardRankMap[1]}】</b>`;
+                    color = "text-[#3a5a40]";
+                } else if (idx === 1) {
+                    prize = `🥈 <b>榜眼嘉獎：【${rewardRankMap[2]}】</b>`;
+                    color = "text-[#2b4555]";
+                } else if (idx === pCount - 1) {
+                    prize = `💀 <b>殿軍懲處：【${penaltyRankMap.last}】</b>`;
+                    color = "text-[#a63429]";
+                } else if (pCount > 3 && idx === pCount - 2) {
+                    prize = `⚠️ <b>倒二懲處：【${penaltyRankMap.secondLast}】</b>`;
+                    color = "text-[#b68938]";
+                }
+                body += `
+                    <div class="p-3.5 border-2 rounded-2xl bg-[#fcfaf2] shadow-sm flex items-center justify-between" style="border-color:${p.color}">
+                        <div>
+                            <h4 class="font-serif-tc font-black text-base text-[#2b2623]">第 ${idx + 1} 名 － ${p.seatNo}號</h4>
+                            <p class="${color} text-xs md:text-sm mt-0.5 font-bold">${prize}</p>
+                        </div>
+                        <div class="font-serif-tc font-black text-base text-[#a63429]">${p.score} 分</div>
+                    </div>
+                `;
+            });
+            body += `</div>`;
+            const m = document.getElementById('modal-container');
+            document.getElementById('modal-header').innerText = "🏆 國文文局・最終金榜";
+            document.getElementById('modal-header').className = "font-serif-tc p-4 text-[#fcfaf2] font-black text-center text-xl md:text-2xl bg-[#2b2623]";
+            document.getElementById('modal-body').innerHTML = body;
+            document.getElementById('modal-footer').innerHTML = `
+                <button onclick="location.reload()" class="btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-10 py-3 rounded-2xl font-serif-tc font-black text-lg shadow-lg">
+                    返回課程目錄
+                </button>
+            `;
+            m.classList.remove('hidden');
+        }
+
+        function showModal(title, content, headerClass, onClose, hideFooter = false) {
+            const m = document.getElementById('modal-container');
+            document.getElementById('modal-header').innerHTML = title;
+            document.getElementById('modal-header').className = `font-serif-tc p-4 text-[#fcfaf2] font-black text-center text-xl md:text-2xl tracking-wider ${headerClass}`;
+            document.getElementById('modal-body').innerHTML = content;
+            const f = document.getElementById('modal-footer');
+            f.innerHTML = '';
+            if (!hideFooter) {
+                const b = document.createElement('button');
+                b.className = "btn-ink bg-[#a63429] border-[#691c15] text-[#fcfaf2] px-10 py-2.5 rounded-2xl font-serif-tc font-black text-base shadow-md";
+                b.innerText = "確定";
+                b.onclick = () => {
+                    m.classList.add('hidden');
+                    if (onClose) onClose();
+                };
+                f.appendChild(b);
+            }
+            m.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
